@@ -1,6 +1,10 @@
-***DO NOT RUN THESE SCRIPTS***
+***DO NOT RUN: MALICIOUS CODE***
+**YOU HAVE BEEN WARNED**
+
 In downloading or executing these files, the author takes no responsibility for any damage, loss or any result that
-otherwise comes about as a direct result of this program.
+otherwise comes about as a direct result of running any or all of these files. This project is designed for educational
+use only and any attempts to use this code maliciously is illegal and punishable by law. The author takes no
+responsibility for any harm done by, or attacks using, this code.
 
 This is designed to be malicious code. Do not run on your system!
 
