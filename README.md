@@ -16,3 +16,16 @@ operating systems like windows.
 
 There will be attempts to obfuscate actions from users, which is a key characteristic of rootkits. This also makes them
 *very* hard to detect and eliminate once a system has been infected.
+
+Instructions for use:
+1. Install a virtual machine to safeguard the host system from infection with malicious code - I used [this](https://www.youtube.com/watch?v=QXdFTEPXJ4M) tutorial to install Ubuntu 24.04 in VirtualBox
+2. Once you have installed Ubuntu on the VM, clone the repo onto the VM with:
+```git
+git clone git@github.com:joshua-poole/something-awesome.git
+```
+3. ***Important:*** ensure you change your network settings on the VM to be disabled, so the machine is not connected to the open internet
+4. run the following command:
+```
+make
+```
+5. 
