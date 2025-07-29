@@ -1,11 +1,9 @@
 ***DO NOT RUN: MALICIOUS CODE***
 
-**YOU HAVE BEEN WARNED**
+**THE USER DOWNLOADS OR EXECUTES THIS CODE AT THEIR OWN RISK, NO LIABILITY IS BORNE BY THE AUTHOR**
 
-In downloading or executing these files, the author takes no responsibility for any damage, loss or any result that
-otherwise comes about as a direct result of running any or all of these files. This project is designed for educational
-use only and any attempts to use this code maliciously is illegal and punishable by law. The author takes no liability
-for any harm done by, or attacks using, this code.
+The author takes no responsibility for any damage, loss or harm that otherwise comes about from running any or all of these files. This project is designed for educational use only and any attempts to use this code maliciously is illegal and punishable by law. The author takes no liability
+for any harm done by, or attacks using, this code. In downloading or executing these files the user agrees to not hold the author liabile for any loss, damage or harm coming about as a result of this code.
 
 This is designed to be malicious code. Do not run on your system!
 
