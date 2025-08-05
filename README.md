@@ -18,16 +18,17 @@ Instructions for use:
 1. Install a virtual machine to safeguard the host system from infection with malicious code - I used [this](https://www.youtube.com/watch?v=QXdFTEPXJ4M) tutorial to install Ubuntu 24.04 in VirtualBox
 2. Once you have installed Ubuntu on the VM, clone the repo onto the VM with:
 ```git
-git clone git@github.com:joshua-poole/something-awesome.git
+$ git clone git@github.com:joshua-poole/something-awesome.git
 ```
 3. ***Important:*** ensure you change your network settings on the VM to be disabled, so the machine is not connected to the open internet
 4. Run the following commands:
 ```shell
-cd something-awesome/
-make clean && make
-sudo dmesg --clear
-**NOTE: will need to put in password for the VM in at this point**
-sudo insmod rootkitv2.ko
+$ sudo apt install build-essential linux-headers-$(uname -r)
+$ cd something-awesome/
+$ make clean && make
+$ sudo dmesg --clear
+** NOTE: will need to put in password for the VM in at this point **
+$ sudo insmod rootkitv2.ko
 ```
 5. Now, the rootkit module should be installed in the kernel!
 
