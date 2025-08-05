@@ -102,6 +102,8 @@ MODULE_VERSION("0.2");
 //======================================================================================================================
 
 //******************************************** Read-only memory protection *********************************************
+// The following functions were adapted from those found on:
+// https://jm33.me/we-can-no-longer-easily-disable-cr0-wp-write-protection.html
 static inline void write_cr0_forced(unsigned long val) {
     unsigned long __force_order;
 
@@ -111,12 +113,12 @@ static inline void write_cr0_forced(unsigned long val) {
 
 static inline void enable_write_protection(void) {
     preempt_enable();
-    write_cr0_forced(read_cr0() | 0x10000);
+    write_cr0_forced(read_cr0() | X86_CR0_WP);
 }
 
 static inline void disable_write_protection(void) {
     preempt_disable();
-    write_cr0_forced(read_cr0() & ~0x10000);
+    write_cr0_forced(read_cr0() & (~X86_CR0_WP));
 }
 //======================================================================================================================
 
@@ -142,7 +144,7 @@ static struct data_node *insert_data_node(struct data_node **head, void *data)
 	return (*head);
 }
 
-void delete_data_node(struct data_node **head, struct data_node *node) {
+static void delete_data_node(struct data_node **head, struct data_node *node) {
 	if(*head == NULL || node == NULL) return;
 	if(*head == node) *head = node->next;
 
