@@ -1,7 +1,5 @@
 # Linux Kernel Module Rootkit
 
-**THE USER DOWNLOADS OR EXECUTES THIS CODE AT THEIR OWN RISK, NO LIABILITY IS BORNE BY THE AUTHOR**
-
 <ins>__Important Disclaimer__</ins>: This repository is provided purely for educational and academic purposes. The software is provided "as is", and the author are not responsible for any damage, loss or harm that otherwise comes about from its use. This project is designed for educational use only and any attempts to use this code maliciously is illegal and may result in criminal prosecution. The author takes no liability for any harm done by, or attacks using, this code. In downloading or executing these files the user agrees to not hold the author liabile for any loss, damage or harm coming about as a result of this code.
 
 This is designed to be malicious code. Do not run on your system!
@@ -23,8 +21,13 @@ Instructions for use:
 git clone git@github.com:joshua-poole/something-awesome.git
 ```
 3. ***Important:*** ensure you change your network settings on the VM to be disabled, so the machine is not connected to the open internet
-4. run the following command:
+4. Run the following commands:
+```shell
+cd something-awesome/
+make clean && make
+sudo dmesg --clear
+**NOTE: will need to put in password for the VM in at this point**
+sudo insmod rootkitv2.ko
 ```
-make
-```
-5. 
+5. Now, the rootkit module should be installed in the kernel!
+
