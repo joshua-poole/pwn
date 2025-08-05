@@ -21,7 +21,7 @@ Instructions for use:
 $ git clone git@github.com:joshua-poole/something-awesome.git
 ```
 
-3.
+3. Install the required linux headers
 ```shell
 $ sudo apt install build-essential linux-headers-$(uname -r)
 ```
