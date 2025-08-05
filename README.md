@@ -20,17 +20,23 @@ Instructions for use:
 ```git
 $ git clone git@github.com:joshua-poole/something-awesome.git
 ```
-3. ***Important:*** ensure you change your network settings on the VM to be disabled, so the machine is not connected to the open internet
-4. Run the following commands:
+
+3.
 ```shell
 $ sudo apt install build-essential linux-headers-$(uname -r)
+```
+
+4. ***Important:*** ensure you change your network settings on the VM to be disabled, so the machine is not connected to the open internet
+
+5. Run the following commands:
+```shell
 $ cd something-awesome/
 $ make clean && make
 $ sudo dmesg --clear
 ```
-** NOTE: you will need to put in password for the VM in at this point **
+You will need to put in password for the VM in at this point.
 
-5. Now, run the install command, and rootkit module should be installed in the kernel!
+6. Now, run the install command, and rootkit module should be installed in the kernel!
 ```shell
 $ sudo insmod rootkitv2.ko
 ```
