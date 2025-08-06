@@ -42,3 +42,13 @@ $ sudo insmod pwn.ko
 ```
 
 
+7. When you're done, you can remove the module by running
+```shell
+$ sudo rmmod pwn
+```
+Just make sure the module isn't hidden!
+If it is, just run
+```shell
+$ kill -57 $$
+```
+before trying to remove the module!
