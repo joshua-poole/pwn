@@ -2,7 +2,11 @@
 
 <ins>__Important Disclaimer__</ins>: This repository is provided purely for educational and academic purposes. The software is provided "as is", and the author are not responsible for any damage, loss or harm that otherwise comes about from its use. This project is designed for educational use only and any attempts to use this code maliciously is illegal and may result in criminal prosecution. The author takes no liability for any harm done by, or attacks using, this code. In downloading or executing these files the user agrees to not hold the author liabile for any loss, damage or harm coming about as a result of this code.
 
-This is designed to be malicious code. Do not run on your system!
+## This is designed to be malicious code. Do not run on your system!
+
+### This code is experiemental and build for a university project. There is no guarantee it will work, and will probably crash at some point.
+
+Only compatible with x86 architecture and with linux kernel >= v5.7.0
 
 I used a virtual machine running ubuntu 24.04 as a demonstration for this project.
 

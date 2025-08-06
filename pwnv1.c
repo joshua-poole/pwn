@@ -62,7 +62,7 @@ static unsigned long *get_syscall_table(void) {
 }
 
 /* NOTE: THE FOLLOWING THREE FUNCTIONS ARE TAKEN FROM THIS SOURCE:
-https://jm33.me/we-can-no-longer-easily-disable-cr0-wp-write-protection.html*/
+https://jm33.me/we-can-no-longer-easily-disable-cr0-wp-write-protection.html */
 // These functions are used to modify the cr0 register in the CPU, whos 16th bit is the write protection (WP) bit
 // This allows processes to write into read-only pages, including the syscall table!!
 static inline void write_cr0_forced(unsigned long val)
