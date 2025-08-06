@@ -31,14 +31,14 @@ $ sudo apt install build-essential linux-headers-$(uname -r)
 5. Run the following commands:
 ```shell
 $ cd something-awesome/
-$ make clean && make
+$ make
 $ sudo dmesg --clear
 ```
 You will need to put in password for the VM in at this point.
 
 6. Now, run the install command, and rootkit module should be installed in the kernel!
 ```shell
-$ sudo insmod rootkitv2.ko
+$ sudo insmod pwn.ko
 ```
 
 

